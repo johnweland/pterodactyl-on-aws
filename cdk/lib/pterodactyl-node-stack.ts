@@ -4,7 +4,7 @@ import * as ec2 from 'aws-cdk-lib/aws-ec2';
 import * as autoscaling from 'aws-cdk-lib/aws-autoscaling';
 
 
-export class PterodactylOnAwsStack extends Stack {
+export class PterodactylNodeStack extends Stack {
   constructor(scope: Construct, id: string, props?: StackProps) {
     super(scope, id, props);
 
@@ -15,7 +15,9 @@ export class PterodactylOnAwsStack extends Stack {
       instanceType: ''
     });
 
-    const scalingPolicy = new autoscaling.CfnScalingPolicy(this, 'blah', {})
+    const scalingPolicy = new autoscaling.CfnScalingPolicy(this, 'blah', {
+        autoScalingGroupName: 'pterodactyl-node-asg',
+    })
 
     const autoscaler = new autoscaling.AutoScalingGroup(this, 'asg', {
       vpc
