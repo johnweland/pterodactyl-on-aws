@@ -2,7 +2,7 @@
   "name": "pterodactyl-on-aws",
   "version": "0.1.0",
   "bin": {
-    "pterodactyl-on-aws": "cdk/bin/pterodactyl-on-aws.js"
+    "pterodactyl-on-aws": "bin/pterodactyl-on-aws.js"
   },
   "scripts": {
     "build": "tsc",
