@@ -1,16 +1,24 @@
 import { Stack, StackProps } from 'aws-cdk-lib';
 import { Construct } from 'constructs';
-// import * as sqs from 'aws-cdk-lib/aws-sqs';
+import * as ec2 from 'aws-cdk-lib/aws-ec2';
+import * as autoscaling from 'aws-cdk-lib/aws-autoscaling';
+
 
 export class PterodactylOnAwsStack extends Stack {
   constructor(scope: Construct, id: string, props?: StackProps) {
     super(scope, id, props);
 
-    // The code that defines your stack goes here
+    const vpc = ec2.Vpc.fromLookup(this, 'vpc', {vpcId: 'vpc-123456'});
 
-    // example resource
-    // const queue = new sqs.Queue(this, 'PterodactylOnAwsQueue', {
-    //   visibilityTimeout: cdk.Duration.seconds(300)
-    // });
+    const launchConfiguration = new autoscaling.CfnLaunchConfiguration(this, 'LaunchConfiguration', {
+      imageId: '',
+      instanceType: ''
+    });
+
+    const scalingPolicy = new autoscaling.CfnScalingPolicy(this, 'blah', {})
+
+    const autoscaler = new autoscaling.AutoScalingGroup(this, 'asg', {
+      vpc
+    });
   }
 }
