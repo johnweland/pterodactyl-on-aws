@@ -63,7 +63,7 @@ export class PanelStack extends Stack {
     });
 
     const httpsListener = loadBalancer.addListener('Listener', {
-      port: 80,
+      port: 443,
       open: true,
     });
     httpsListener.addTargets('Target', {
@@ -72,6 +72,6 @@ export class PanelStack extends Stack {
       targets: [asg],
     });
 
-    new CfnOutput(this, 'PanelURL', {value: loadBalancer.loadBalancerDnsName!});
+    new CfnOutput(this, `${this.stackName}-panelURL`, {value: loadBalancer.loadBalancerDnsName!});
   }
 }
