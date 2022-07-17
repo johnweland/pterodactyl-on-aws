@@ -1,13 +1,13 @@
 #!/usr/bin/env node
-import 'source-map-support/register';
-import * as cdk from 'aws-cdk-lib';
-import { PterodactylOnAwsStack } from '../lib/pterodactyl-on-aws-stack';
+import "source-map-support/register";
+import * as cdk from "aws-cdk-lib";
+import { PanelStack } from "../lib/pterodactyl-panel-stack";
 
 const app = new cdk.App();
-new PterodactylOnAwsStack(app, 'PterodactylOnAwsStack', {
+
+new PanelStack(app, "PanelStack", {
   env: {
-    account: app.account,
-    region: app.region
+    account: process.env.CDK_DEPLOY_ACCOUNT || process.env.CDK_DEFAULT_ACCOUNT,
+    region: process.env.CDK_DEPLOY_REGION || process.env.CDK_DEFAULT_REGION,
   },
-  VPC_ID: 'vpc-123456'
 });
