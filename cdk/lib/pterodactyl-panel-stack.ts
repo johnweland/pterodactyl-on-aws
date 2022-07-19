@@ -4,6 +4,7 @@ import * as ec2 from "aws-cdk-lib/aws-ec2";
 import * as autoscaling from "aws-cdk-lib/aws-autoscaling";
 import * as iam from "aws-cdk-lib/aws-iam";
 import { PterodactylOnAwsStackProps } from "./props";
+import { readFileSync } from "fs";
 
 export class PanelStack extends Stack {
   constructor(
@@ -26,8 +27,8 @@ export class PanelStack extends Stack {
       ],
     });
 
-    const securityGroup = new ec2.SecurityGroup(this, `${this.stackName}-sg`, {
-      securityGroupName: `${this.stackName}-sg`,
+    const securityGroup = new ec2.SecurityGroup(this, `${this.stackName}-SG`, {
+      securityGroupName: `${this.stackName}-SG`,
       description: "Pterodactyl Panel Security Group",
       vpc,
       allowAllOutbound: true,
@@ -48,10 +49,36 @@ export class PanelStack extends Stack {
       ec2.Port.tcp(443),
       "Allow HTTPS"
     );
+    const role = new iam.Role(this, "InstanceRole", {
+      assumedBy: new iam.ServicePrincipal("ec2.amazonaws.com"),
+    });
+    role.addManagedPolicy(
+      iam.ManagedPolicy.fromAwsManagedPolicyName(
+        "service-role/AmazonEC2ContainerServiceforEC2Role"
+      )
+    );
+    role.addManagedPolicy(
+      iam.ManagedPolicy.fromAwsManagedPolicyName("CloudWatchAgentServerPolicy")
+    );
+    role.addManagedPolicy(
+      iam.ManagedPolicy.fromAwsManagedPolicyName("AmazonSSMManagedInstanceCore")
+    );
+
+    const userDataScript = readFileSync("./lib/user-data.sh", "utf8");
+    const multipartUserData = new ec2.MultipartUserData();
+    const commandsUserData = ec2.UserData.forLinux();
+    multipartUserData.addUserDataPart(
+      commandsUserData,
+      ec2.MultipartBody.SHELL_SCRIPT,
+      true
+    );
+
+    // Adding commands to the multipartUserData adds them to commandsUserData, and vice-versa.
+    multipartUserData.addCommands(userDataScript);
 
     const autoscaler = new autoscaling.AutoScalingGroup(
       this,
-      `${this.stackName}-asg`,
+      `${this.stackName}-ASG`,
       {
         vpc,
         instanceType: new ec2.InstanceType(props?.INSTANCE_TYPE || "t3a.micro"),
@@ -60,20 +87,7 @@ export class PanelStack extends Stack {
           edition: ec2.AmazonLinuxEdition.STANDARD,
           storage: ec2.AmazonLinuxStorage.EBS,
         }),
-        role: new iam.Role(this, "InstanceRole", {
-          assumedBy: new iam.ServicePrincipal("ec2.amazonaws.com"),
-          managedPolicies: [
-            iam.ManagedPolicy.fromAwsManagedPolicyName(
-              "arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceforEC2Role"
-            ),
-            iam.ManagedPolicy.fromAwsManagedPolicyName(
-              "arn:aws:iam::aws:policy/CloudWatchAgentServerPolicy"
-            ),
-            iam.ManagedPolicy.fromAwsManagedPolicyName(
-              "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
-            ),
-          ],
-        }),
+        role,
         desiredCapacity: 1,
         minCapacity: 1,
         maxCapacity: 1,
@@ -82,6 +96,7 @@ export class PanelStack extends Stack {
         },
         securityGroup: securityGroup,
         associatePublicIpAddress: true,
+        userData: multipartUserData,
       }
     );
     autoscaler.addSecurityGroup(securityGroup);
